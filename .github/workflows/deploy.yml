@@ -28,6 +28,11 @@ jobs:
     - name: Load secret and save app.env
       run: aws secretsmanager get-secret-value --secret-id simple_bank --query SecretString --output text | jq -r 'to_entries|map("\(.key)=\(.value)")|.[]' > app.env
 
+    - name: Check key length
+      run: |
+        grep TOKEN_SYMMETRIC_KEY app.env
+        grep TOKEN_SYMMETRIC_KEY app.env | cut -d= -f2 | wc -c
+
     - name: Build, tag, and push image to AMAZON ECR 
       env: 
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
