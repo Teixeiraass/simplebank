@@ -1,3 +1,8 @@
+DB_URL=postgresql://root:secret@localhost:5433/simple_bank?sslmode=disable
+
+network:
+	docker network create bank-network
+
 postgres:
 	docker run --name postgres16 --network bank-network -p 5433:5432 -e POSTGRES_USER=root -e POSTGRES_PASSWORD=secret -d postgres:16.13-alpine
 
@@ -8,16 +13,16 @@ dropdb:
 	docker exec -it postgres16 dropdb simple_bank
 
 migrateup:
-	migrate -path db/migration -database "postgresql://root:secret@localhost:5433/simple_bank?sslmode=disable" -verbose up
+	migrate -path db/migration -database "$(DB_URL)" -verbose up
 
 migrateup1:
-	migrate -path db/migration -database "postgresql://root:secret@localhost:5433/simple_bank?sslmode=disable" -verbose up 1
+	migrate -path db/migration -database "$(DB_URL)" -verbose up 1
 
 migratedown: 
-	migrate -path db/migration -database "postgresql://root:secret@localhost:5433/simple_bank?sslmode=disable" -verbose down
+	migrate -path db/migration -database "$(DB_URL)" -verbose down
 
 migratedown1: 
-	migrate -path db/migration -database "postgresql://root:secret@localhost:5433/simple_bank?sslmode=disable" -verbose down 1
+	migrate -path db/migration -database "$(DB_URL)" -verbose down 1
 
 sqlc: 
 	sqlc generate
@@ -31,4 +36,10 @@ server:
 mock: 
 	mockgen -package mockdb -destination db/mock/store.go github.com/Teixeiraass/simple_bank/db/sqlc Store
 
-.PHONY: postgres createdb dropdb migrateup migrateup1 migratedown migratedown1 sqlc test server mock
+db_docs: 
+	dbdocs build doc/db.dbml
+
+db_schema: 
+	dbml2sql --postgres -o doc/schema.sql doc/db.dbml
+
+.PHONY: postgres createdb dropdb migrateup migrateup1 migratedown migratedown1 sqlc test server mock db_docs db_schema
